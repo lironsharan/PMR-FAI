@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PMR &amp; FAI Report Builder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         * { box-sizing: border-box; }
@@ -70,7 +68,7 @@
 
         /* Photos */
         .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-        .photo-slot { border: 2px dashed #d1d5db; border-radius: 7px; padding: 10px 8px 8px; text-align: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.15s; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .photo-slot { border: 2px dashed #d1d5db; border-radius: 7px; padding: 10px 8px 8px; text-align: center; cursor: pointer; position: relative; transition: all 0.15s; min-height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .photo-slot:hover { border-color: #76b900; background: #fafff0; }
         .photo-slot.filled { border-style: solid; border-color: #86efac; background: #f0fff4; }
         .photo-slot input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
@@ -187,6 +185,14 @@
     .btn { padding: 8px 14px; font-size: 12px; }
     .top-bar > div:last-child { gap: 5px; }
 }
+
+
+/* Mini photo slot in table notes cell */
+.notes-photo-slot { display:inline-flex; align-items:center; justify-content:center; width:100%; min-height:32px; border:1.5px dashed #d1d5db; border-radius:4px; cursor:pointer; position:relative; overflow:visible; font-size:11px; color:#9ca3af; gap:4px; padding:4px 6px; box-sizing:border-box; }
+.notes-photo-slot:hover { border-color:#76b900; color:#76b900; background:#fafff0; }
+.notes-photo-slot input[type=file] { position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%; }
+.notes-photo-slot img { height:36px; width:auto; border-radius:3px; object-fit:cover; }
+.notes-photo-remove { position:absolute; top:-6px; right:-6px; background:#dc2626; color:#fff; border:none; border-radius:50%; width:16px; height:16px; font-size:9px; cursor:pointer; z-index:10; display:flex; align-items:center; justify-content:center; line-height:1; padding:0; }
 
 </style>
 </head>
@@ -427,63 +433,64 @@ const state = {
         vf:        { dataURL:null, buffer:null }
     },
     dimensional: [
-        { id:'D1', feature:'Inside length (AG = BH = CE = DF)', nominal:'', tolerance:'', measured:'', verdict:'', notes:'' },
-        { id:'D2', feature:'Inside width (AC = DB = HF = EG)',  nominal:'', tolerance:'', measured:'', verdict:'', notes:'' },
-        { id:'D3', feature:'Inside height (AB = CD = EF = HG)', nominal:'', tolerance:'', measured:'', verdict:'', notes:'' },
+        { id:'D1', feature:'Inside length (AG = BH = CE = DF)', nominal:'', tolerance:'', measured:'', verdict:'', notes:'', notesPhoto:null },
+        { id:'D2', feature:'Inside width (AC = DB = HF = EG)',  nominal:'', tolerance:'', measured:'', verdict:'', notes:'', notesPhoto:null },
+        { id:'D3', feature:'Inside height (AB = CD = EF = HG)', nominal:'', tolerance:'', measured:'', verdict:'', notes:'', notesPhoto:null },
         { id:'D4', feature:'Outside Dimensions (L × W × H)',    nominal:'', tolerance:'–',   measured:'', verdict:'–',   notes:'–' },
     ],
     material: [
-        { id:'M1',  label:'External box – corrugated grade',  spec:'', tol:'',                measured:'', verdict:'',    notes:'' },
-        { id:'M2',  label:'Foam type',                        spec:'', tol:'',                measured:'', verdict:'',    notes:'' },
-        { id:'M3',  label:'Vacuum forming type',              spec:'', tol:'',                measured:'', verdict:'',    notes:'' },
-        { id:'M4',  label:'Corrugated board thickness',       spec:'', tol:'',                measured:'', verdict:'',    notes:'' },
-        { id:'M5',  label:'VF thickness',                     spec:'', tol:'',                measured:'', verdict:'',    notes:'' },
-        { id:'M6',  label:'Cardboard density',                spec:'', tol:'(no upper limit)',measured:'', verdict:'',    notes:'' },
-        { id:'M7',  label:'Foam density',                     spec:'', tol:'',                measured:'', verdict:'',    notes:'' },
+        { id:'M1',  label:'External box – corrugated grade',  spec:'', tol:'',                measured:'', verdict:'',    notes:'', notesPhoto:null },
+        { id:'M2',  label:'Foam type',                        spec:'', tol:'',                measured:'', verdict:'',    notes:'', notesPhoto:null },
+        { id:'M3',  label:'Vacuum forming type',              spec:'', tol:'',                measured:'', verdict:'',    notes:'', notesPhoto:null },
+        { id:'M4',  label:'Corrugated board thickness',       spec:'', tol:'',                measured:'', verdict:'',    notes:'', notesPhoto:null },
+        { id:'M5',  label:'VF thickness',                     spec:'', tol:'',                measured:'', verdict:'',    notes:'', notesPhoto:null },
+        { id:'M6',  label:'Cardboard density',                spec:'', tol:'(no upper limit)',measured:'', verdict:'',    notes:'', notesPhoto:null },
+        { id:'M7',  label:'Foam density',                     spec:'', tol:'',                measured:'', verdict:'',    notes:'', notesPhoto:null },
         { id:'M8',  label:'Total cardboard parts weight',     spec:'–', tol:'–',             measured:'', verdict:'N/A', notes:'–' },
         { id:'M9',  label:'Total foam parts weight',          spec:'–', tol:'–',             measured:'', verdict:'N/A', notes:'–' },
         { id:'M10', label:'Total VF parts weight',            spec:'–', tol:'–',             measured:'', verdict:'N/A', notes:'–' },
         { id:'M11', label:'Material bonding',                 spec:'–', tol:'–',             measured:'–', verdict:'',   notes:'–' },
         { id:'M12', label:'Cardboard Burst Strength (BST)',   spec:'–', tol:'–',             measured:'', verdict:'N/A', notes:'–' },
         { id:'M13', label:'Cardboard Edge Crush Test (ECT)',  spec:'–', tol:'–',             measured:'', verdict:'N/A', notes:'–' },
-        { id:'M14', label:'ESD (1×10⁴ – 1×10¹¹ Ω)',         spec:'1×10⁴ – 1×10¹¹ Ω', tol:'–', measured:'', verdict:'', notes:'' },
+        { id:'M14', label:'ESD (1×10⁴ – 1×10¹¹ Ω)',         spec:'1×10⁴ – 1×10¹¹ Ω', tol:'–', measured:'', verdict:'', notes:'', notesPhoto:null },
     ],
     adhesive: [
-        { id:'J1', label:'Joint type',                verdict:'', notes:'' },
-        { id:'J2', label:'Joint pitch (pin spacing)', verdict:'', notes:'' },
-        { id:'J3', label:'Joint straightness / gaps', verdict:'', notes:'' },
-        { id:'J4', label:'Score line condition',       verdict:'', notes:'' },
+        { id:'J1', label:'Joint type',                verdict:'', notes:'', notesPhoto:null },
+        { id:'J2', label:'Joint pitch (pin spacing)', verdict:'', notes:'', notesPhoto:null },
+        { id:'J3', label:'Joint straightness / gaps', verdict:'', notes:'', notesPhoto:null },
+        { id:'J4', label:'Score line condition',       verdict:'', notes:'', notesPhoto:null },
     ],
     artwork: [
-        { id:'A1', label:"Packaging classification (PAC#, REV#, vendor's name)", verdict:'', notes:'' },
-        { id:'A2', label:'Shipping and handling symbols, stacking limitations',   verdict:'', notes:'' },
-        { id:'A3', label:'External box dimensions',                               verdict:'', notes:'' },
-        { id:'A4', label:'ESD marking',                                           verdict:'', notes:'' },
-        { id:'A5', label:'BMC stamp',                                             verdict:'', notes:'' },
-        { id:'A6', label:'Recycling / material marking',                          verdict:'', notes:'' },
-        { id:'A7', label:'Foam printing',                                         verdict:'', notes:'' },
-        { id:'A8', label:'Vacuum forming embossed artwork',                       verdict:'', notes:'' },
+        { id:'A1', label:"Packaging classification (PAC#, REV#, vendor's name)", verdict:'', notes:'', notesPhoto:null },
+        { id:'A2', label:'Shipping and handling symbols, stacking limitations',   verdict:'', notes:'', notesPhoto:null },
+        { id:'A3', label:'External box dimensions',                               verdict:'', notes:'', notesPhoto:null },
+        { id:'A4', label:'ESD marking',                                           verdict:'', notes:'', notesPhoto:null },
+        { id:'A5', label:'BMC stamp',                                             verdict:'', notes:'', notesPhoto:null },
+        { id:'A6', label:'Recycling / material marking',                          verdict:'', notes:'', notesPhoto:null },
+        { id:'A7', label:'Foam printing',                                         verdict:'', notes:'', notesPhoto:null },
+        { id:'A8', label:'Vacuum forming embossed artwork',                       verdict:'', notes:'', notesPhoto:null },
     ],
     visual: [
-        { id:'V1', label:'Cardboard',          verdict:'', notes:'' },
-        { id:'V2', label:'Foam',               verdict:'', notes:'' },
-        { id:'V3', label:'Vacuum forming',     verdict:'', notes:'' },
-        { id:'V4', label:'Box parts assembly', verdict:'', notes:'' },
-        { id:'V5', label:'Box set up',         verdict:'', notes:'' },
-        { id:'V6', label:'Box taping',         verdict:'', notes:'' },
+        { id:'V1', label:'Cardboard',          verdict:'', notes:'', notesPhoto:null },
+        { id:'V2', label:'Foam',               verdict:'', notes:'', notesPhoto:null },
+        { id:'V3', label:'Vacuum forming',     verdict:'', notes:'', notesPhoto:null },
+        { id:'V4', label:'Box parts assembly', verdict:'', notes:'', notesPhoto:null },
+        { id:'V5', label:'Box set up',         verdict:'', notes:'', notesPhoto:null },
+        { id:'V6', label:'Box taping',         verdict:'', notes:'', notesPhoto:null },
     ],
+    functional: [],
     cocFile: null,
     m6calc: {weight:'', l:'', w:''},
     m7calc: {weight:'', l:'', w:'', h:''},
     fai: {
         avlType:'first', firstAvlRef:'',
         items: [
-            { id:'F1', label:'Unit insertion force',            verdict:'', notes:'' },
-            { id:'F2', label:'Unit extraction force',           verdict:'', notes:'' },
-            { id:'F3', label:'Accessory pocket fit',            verdict:'', notes:'' },
-            { id:'F4', label:'Closure integrity after loading', verdict:'', notes:'' },
-            { id:'F5', label:'Single box inside a bulk box',    verdict:'', notes:'' },
-            { id:'F6', label:'VF nesting and separation',       verdict:'', notes:'' },
+            { id:'F1', label:'Unit insertion force',            verdict:'', notes:'', notesPhoto:null },
+            { id:'F2', label:'Unit extraction force',           verdict:'', notes:'', notesPhoto:null },
+            { id:'F3', label:'Accessory pocket fit',            verdict:'', notes:'', notesPhoto:null },
+            { id:'F4', label:'Closure integrity after loading', verdict:'', notes:'', notesPhoto:null },
+            { id:'F5', label:'Single box inside a bulk box',    verdict:'', notes:'', notesPhoto:null },
+            { id:'F6', label:'VF nesting and separation',       verdict:'', notes:'', notesPhoto:null },
             { id:'F7', label:'Automatic packaging line',        verdict:'', notes:'–' },
         ]
     }
@@ -499,9 +506,21 @@ function saveState() {
         s.overviewCards.cardboard.buffer = null;
         s.overviewCards.vf.buffer = null;
         s._pdfBalloons = _pdfBalloons;
+        s.m6calc = state.m6calc;
+        s.m7calc = state.m7calc;
         // cocFile.dataURL can be large; save only metadata
         if (s.cocFile) s.cocFile = { name: s.cocFile.name, type: s.cocFile.type, dataURL: s.cocFile.dataURL };
-        localStorage.setItem('pmrfai_v4', JSON.stringify(s));
+        // Strip notesPhotos from localStorage to avoid 5MB limit (they are in saveProgressJSON)
+        const stripped = JSON.parse(JSON.stringify(s));
+        ['dimensional','material','adhesive','artwork','visual','functional'].forEach(sec => {
+            if (stripped[sec]) stripped[sec].forEach(r => { r.notesPhoto = null; });
+        });
+        if (stripped.fai && stripped.fai.items) stripped.fai.items.forEach(r => { r.notesPhoto = null; });
+        stripped.photoDataURLs = stripped.photoDataURLs.map(()=>null);
+        stripped.overviewCards.cardboard.dataURL = null;
+        stripped.overviewCards.vf.dataURL = null;
+        if (stripped._pdfBalloons) Object.values(stripped._pdfBalloons).forEach(arr => arr.forEach(b => { b.notesPhoto = null; }));
+        try { localStorage.setItem('pmrfai_v4', JSON.stringify(stripped)); } catch(e){}
         localStorage.setItem('pmrfai_step_v4', currentStep);
     } catch(e){}
 }
@@ -531,6 +550,26 @@ function loadStateFromObject(s) {
     if (s.fai)         { Object.assign(state.fai, s.fai); if (s.fai.items) state.fai.items = mergeRows(s.fai.items, state.fai.items); }
     if (s._pdfBalloons) _pdfBalloons = s._pdfBalloons;
     if (s.cocFile)      state.cocFile = s.cocFile;
+    if (s.m6calc)       state.m6calc = s.m6calc;
+    if (s.m7calc)       state.m7calc = s.m7calc;
+    if (s.functional)   state.functional = mergeRows(s.functional, state.functional);
+    // Restore notesPhoto on all rows (in case mergeRows didn't carry it)
+    ['dimensional','material','adhesive','artwork','visual','functional'].forEach(sec => {
+        if (!s[sec]) return;
+        s[sec].forEach(saved => {
+            const row = state[sec].find(r => r.id === saved.id);
+            if (row && saved.notesPhoto !== undefined) row.notesPhoto = saved.notesPhoto;
+        });
+        // Restore dynamically added dimensional rows not in defaults
+        if (sec === 'dimensional') {
+            s.dimensional.filter(r => !state.dimensional.find(x => x.id === r.id))
+                .forEach(r => state.dimensional.push(r));
+        }
+    });
+    if (s.fai && s.fai.items) s.fai.items.forEach(saved => {
+        const row = state.fai.items.find(r => r.id === saved.id);
+        if (row && saved.notesPhoto !== undefined) row.notesPhoto = saved.notesPhoto;
+    });
 }
 
 function loadState() {
@@ -563,6 +602,46 @@ function verdictHtml(sec, idx, canNA) {
         ${canNA?`<button class="vbtn na ${v==='N/A'?'active':''}" onclick="setVerdict('${sec}',${idx},'N/A')">N/A</button>`:''}
     </div>`;
 }
+
+function handleNotesPhoto(section, idx, event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        if (section === 'dimensional') state.dimensional[idx].notesPhoto = reader.result;
+        else if (section === 'material') state.material[idx].notesPhoto = reader.result;
+        else if (section === 'adhesive') state.adhesive[idx].notesPhoto = reader.result;
+        else if (section === 'artwork') state.artwork[idx].notesPhoto = reader.result;
+        else if (section === 'visual') state.visual[idx].notesPhoto = reader.result;
+        else if (section === 'functional') state.functional[idx].notesPhoto = reader.result;
+        else if (section === 'fai') state.fai.items[idx].notesPhoto = reader.result;
+        saveState(); renderContent();
+    };
+    reader.readAsDataURL(file);
+}
+function removeNotesPhoto(section, idx, event) {
+    event.stopPropagation();
+    if (section === 'dimensional') state.dimensional[idx].notesPhoto = null;
+    else if (section === 'material') state.material[idx].notesPhoto = null;
+    else if (section === 'adhesive') state.adhesive[idx].notesPhoto = null;
+    else if (section === 'artwork') state.artwork[idx].notesPhoto = null;
+    else if (section === 'visual') state.visual[idx].notesPhoto = null;
+    else if (section === 'functional') state.functional[idx].notesPhoto = null;
+    else if (section === 'fai') state.fai.items[idx].notesPhoto = null;
+    saveState(); renderContent();
+}
+function notesPhotoCell(section, idx, notesVal, photoData, hint) {
+    if (hint !== 'Insert photo') return '<td><input value="' + esc(notesVal||'') + '" placeholder="' + (hint||'notes') + '" oninput="state.' + section + '[' + idx + '].notes=this.value;saveState()"></td>';
+    if (photoData) {
+        return '<td><div class="notes-photo-slot" style="border-style:solid;border-color:#86efac;background:#f0fff4;">'
+            + '<img src="' + photoData + '">'
+            + '<button class="notes-photo-remove" onclick="removeNotesPhoto(\'' + section + '\',' + idx + ',event)">\u2715</button>'
+            + '</div></td>';
+    }
+    return '<td><div class="notes-photo-slot">📷 Insert photo'
+        + '<input type="file" accept="image/*" onchange="handleNotesPhoto(\'' + section + '\',' + idx + ',event)">'
+        + '</div></td>';
+}
+
 function setVerdict(sec, idx, val) {
     const item = sec==='fai' ? state.fai.items[idx] : state[sec][idx];
     item.verdict = item.verdict === val ? '' : val;
@@ -963,7 +1042,7 @@ function renderDimensional() {
                 <td><input value="${esc(r.tolerance)}" placeholder="±X" oninput="state.dimensional[${i}].tolerance=this.value;saveState()"></td>
                 <td><input value="${esc(r.measured)}" placeholder="${r.id==='D4'?'–':'mm'}" oninput="state.dimensional[${i}].measured=this.value;saveState()"></td>
                 <td>${r.verdict==='N/A'||r.verdict==='–'?badgeHtml(r.verdict):verdictHtml('dimensional',i,false)}</td>
-                <td><input value="${esc(r.notes)}" placeholder="${NOTES_HINT[r.id]||'notes'}" oninput="state.dimensional[${i}].notes=this.value;saveState()"></td>
+                ${notesPhotoCell("dimensional",i,r.notes,r.notesPhoto,NOTES_HINT[r.id]||"Insert photo")}
             </tr>`).join('')}
             </tbody>
             <tbody id="dimBalloonRows"></tbody>
@@ -989,7 +1068,7 @@ function renderDimensional() {
     }, 0);
 }
 function addDimRow() {
-    state.dimensional.push({id:`D${state.dimensional.length+1}`,feature:'',nominal:'',tolerance:'',measured:'',verdict:'',notes:''});
+    state.dimensional.push({id:`D${state.dimensional.length+1}`,feature:'',nominal:'',tolerance:'',measured:'',verdict:'',notes:'', notesPhoto:null});
     saveState(); renderContent();
 }
 
@@ -1034,7 +1113,7 @@ async function loadDrawingPDF(file) {
     const status = document.getElementById('pdfStatus');
     status.textContent = 'Loading…';
     wrap.style.display = 'none';
-    _pdf = null; _pdfPage = 1; _pdfBalloons = {};
+    _pdf = null; _pdfPage = 1;  // _pdfBalloons intentionally NOT reset — preserve saved balloon data
 
     try {
         if (typeof pdfjsLib === 'undefined')
@@ -1093,7 +1172,7 @@ function _onDrawingClick(e) {
     const cy = e.clientY - rect.top;
 
     if (!_pdfBalloons[_pdfPage]) _pdfBalloons[_pdfPage] = [];
-    _pdfBalloons[_pdfPage].push({ cx, cy, feature:'', nominal:'', tolerance:'', measured:'', verdict:'', notes:'' });
+    _pdfBalloons[_pdfPage].push({ cx, cy, feature:'', nominal:'', tolerance:'', measured:'', verdict:'', notes:'', notesPhoto:null });
     _renumber();
     _drawBalloons();
     _updateBalloonTable();
@@ -1196,6 +1275,14 @@ function _updateBalloonTable() {
     tbody.innerHTML = '';
     all.forEach((b, idx) => {
         const tr = document.createElement('tr');
+        const photoSlot = b.notesPhoto
+            ? `<div class="notes-photo-slot" style="border-style:solid;border-color:#86efac;background:#f0fff4;">
+                <img src="${b.notesPhoto}">
+                <button class="notes-photo-remove" onclick="_removeBalloonPhoto(${b.pg},${b.li},event)">&#x2715;</button>
+               </div>`
+            : `<div class="notes-photo-slot">📷 Insert photo
+                <input type="file" accept="image/*" onchange="_handleBalloonPhoto(${b.pg},${b.li},event)">
+               </div>`;
         tr.innerHTML =
             `<td class="row-id">${'D' + (state.dimensional.length + idx + 1)}</td>` +
             `<td><input value="${esc(b.feature||'')}" placeholder="Feature / Dimension" oninput="_setBF(${b.pg},${b.li},'feature',this.value)"></td>` +
@@ -1203,7 +1290,7 @@ function _updateBalloonTable() {
             `<td><input value="${esc(b.tolerance||'')}" placeholder="±2" oninput="_setBF(${b.pg},${b.li},'tolerance',this.value)"></td>` +
             `<td><input value="${esc(b.measured||'')}" placeholder="mm" oninput="_setBF(${b.pg},${b.li},'measured',this.value)"></td>` +
             `<td>${_bVerdictHtml(b.pg, b.li, b.verdict||'')}</td>` +
-            `<td><input value="${esc(b.notes||'')}" placeholder="Insert photo" oninput="_setBF(${b.pg},${b.li},'notes',this.value)"></td>`;
+            `<td>${photoSlot}</td>`;
         tbody.appendChild(tr);
     });
 }
@@ -1218,6 +1305,26 @@ function _setBF(pg, li, field, val) {
 function _setBV(pg, li, verdict) {
     if (_pdfBalloons[pg] && _pdfBalloons[pg][li] !== undefined) {
         _pdfBalloons[pg][li].verdict = verdict;
+        saveState();
+        _updateBalloonTable();
+    }
+}
+function _handleBalloonPhoto(pg, li, event) {
+    const file = event.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        if (_pdfBalloons[pg] && _pdfBalloons[pg][li] !== undefined) {
+            _pdfBalloons[pg][li].notesPhoto = e.target.result;
+            saveState();
+            _updateBalloonTable();
+        }
+    };
+    reader.readAsDataURL(file);
+}
+function _removeBalloonPhoto(pg, li, event) {
+    event.stopPropagation();
+    if (_pdfBalloons[pg] && _pdfBalloons[pg][li] !== undefined) {
+        _pdfBalloons[pg][li].notesPhoto = null;
         saveState();
         _updateBalloonTable();
     }
@@ -1238,7 +1345,8 @@ function _bVerdictHtml(pg, li, verdict) {
 function buildMatRows() {
     if (!state.m6calc) state.m6calc = {weight:'', l:'', w:''};
     if (!state.m7calc) state.m7calc = {weight:'', l:'', w:'', h:''};
-    return state.material.filter(function(r){ return !hiddenRows('material').includes(r.id); }).map(function(r,i) {
+    return state.material.map(function(r,realIdx){ return {r:r, realIdx:realIdx}; }).filter(function(o){ return !hiddenRows('material').includes(o.r.id); }).map(function(o) {
+        var r=o.r, i=o.realIdx;
         var measuredCell;
         if (r.id === 'M6' || r.id === 'M7') {
             measuredCell = '<td><div style="display:flex;align-items:center;gap:4px;">'
@@ -1255,7 +1363,7 @@ function buildMatRows() {
             + '<td><input value="' + esc(r.tol) + '" placeholder="±X" oninput="state.material[' + i + '].tol=this.value;saveState()"></td>'
             + measuredCell
             + '<td>' + (r.verdict==='N/A' ? badgeHtml('N/A') : verdictHtml('material',i,false)) + '</td>'
-            + '<td><input value="' + esc(r.notes) + '" placeholder="' + (NOTES_HINT[r.id]||'notes') + '" oninput="state.material[' + i + '].notes=this.value;saveState()"></td>'
+            + notesPhotoCell("material",i,r.notes,r.notesPhoto,NOTES_HINT[r.id]||"notes")
             + '</tr>';
     }).join('');
 }
@@ -1390,14 +1498,17 @@ function renderMaterial() {
 // STEPS 5-7 – ADHESIVE / ARTWORK / VISUAL (simple verdict tables)
 // =====================================================================
 function simpleTable(sec, rows, hint) {
+    const srcArr = sec==='fai' ? state.fai.items : state[sec];
     return `<div class="tbl-wrap"><table class="itbl">
         <thead><tr><th style="width:38px">#</th><th>Description</th><th style="width:125px">Verdict</th><th>Evidence / Notes</th></tr></thead>
-        <tbody>${rows.map((r,i) => `<tr>
+        <tbody>${rows.map((r) => {
+            const ri = srcArr.indexOf(r);
+            return `<tr>
             <td class="row-id" data-tip="${escTip(TOOLTIPS[r.id])}">${r.id}</td>
             <td style="font-size:12px;color:#374151;">${r.label}</td>
-            <td>${verdictHtml(sec,i,false)}</td>
-            <td><input value="${esc(r.notes)}" placeholder="${NOTES_HINT[r.id]||'notes'}" oninput="state.${sec}[${i}].notes=this.value;saveState()"></td>
-        </tr>`).join('')}</tbody>
+            <td>${verdictHtml(sec,ri,false)}</td>
+            ${notesPhotoCell(sec,ri,r.notes,r.notesPhoto,NOTES_HINT[r.id]||"notes")}
+        </tr>`;}).join('')}</tbody>
     </table></div>`;
 }
 function renderAdhesive() {
@@ -1458,12 +1569,14 @@ function renderFAI() {
         <div class="tbl-wrap"><table class="itbl">
             <thead><tr><th style="width:38px">#</th><th>Fit / Interface Check</th><th style="width:140px">Verdict</th><th>Evidence / Notes</th></tr></thead>
             <tbody>
-            ${state.fai.items.filter(r=>!hiddenRows('faiItems').includes(r.id)).map((r,i) => `<tr>
+            ${state.fai.items.filter(r=>!hiddenRows('faiItems').includes(r.id)).map((r) => {
+                const ri = state.fai.items.indexOf(r);
+                return `<tr>
                 <td class="row-id" data-tip="${escTip(TOOLTIPS[r.id])}">${r.id}</td>
                 <td style="font-size:12px;color:#374151;">${r.label}</td>
-                <td>${verdictHtml('fai',i, r.id==='F7')}</td>
-                <td><input value="${esc(r.notes)}" placeholder="${NOTES_HINT[r.id]||'notes'}" oninput="state.fai.items[${i}].notes=this.value;saveState()"></td>
-            </tr>`).join('')}
+                <td>${verdictHtml('fai',ri, r.id==='F7')}</td>
+                ${notesPhotoCell("fai",ri,r.notes,r.notesPhoto,NOTES_HINT[r.id]||"notes")}
+            </tr>`;}).join('')}
             </tbody>
         </table></div>`}
     </div>`;
@@ -1509,8 +1622,8 @@ function renderGenerate() {
             <div class="gen-item"><div class="gi-lbl">FAI type</div><div class="gi-val">${state.fai.avlType==='first'?'First AVL':'Second AVL'}</div></div>
         </div>
         <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap;">
-            <button class="btn btn-success" onclick="generateDocx()">⬇ Download Report (.docx)</button>
-            <button class="btn btn-blue" onclick="sendReportEmail()">✉ Send by Email</button>
+            <button class="btn btn-success" onclick="generateDocx()">⬇ Download Report (.doc)</button>
+            <button class="btn btn-blue" onclick="sendReportEmail()">✉ Open Email Draft</button>
         </div>
         <div style="margin-top:10px;padding:10px 14px;background:#f9fafb;border-radius:6px;font-size:11.5px;color:#6b7280;text-align:center;">
             Follows DOC070001 template. Attach Appendix A (balloon drawing) and Appendix B (COC) manually.<br>
@@ -1529,10 +1642,14 @@ function saveProgressJSON() {
         s.photoArrayBuffers = Array(7).fill(null);
         s.overviewCards.cardboard.buffer = null;
         s.overviewCards.vf.buffer = null;
+        s._pdfBalloons = _pdfBalloons;
+        s.m6calc = state.m6calc;
+        s.m7calc = state.m7calc;
+        // Note: PDF drawing binary (_pdfData) is not saved due to size — user must re-upload the PDF
         const blob = new Blob([JSON.stringify(s, null, 2)], { type: 'application/json' });
         const co = state.cover;
         const name = `PMR_FAI_progress_${(co.nvpn||'Draft').replace(/[^a-zA-Z0-9]/g,'')}_Rev${(co.revision||'XX').replace(/[^a-zA-Z0-9]/g,'')}.json`;
-        saveAs(blob, name);
+        const _a=document.createElement("a");_a.href=URL.createObjectURL(blob);_a.download=name;document.body.appendChild(_a);_a.click();setTimeout(()=>{URL.revokeObjectURL(_a.href);_a.remove();},1000);
         toast('✅ Progress saved');
     } catch(e) { alert('Error saving: ' + e.message); }
 }
@@ -1555,20 +1672,15 @@ function handleLoadJSON(event) {
 // EMAIL
 // =====================================================================
 function sendReportEmail() {
-    generateDocx(); // download first
     const co = state.cover;
     const subject = encodeURIComponent(`PMR & FAI Summary Report – ${co.nvpn||'Draft'} Rev ${co.revision||'XX'}`);
     const body = encodeURIComponent(
-        `Hi,\n\nPlease find attached the PMR & FAI Summary Report for ${co.nvpn||'[NVPN]'} Rev ${co.revision||'[xx]'} – ${co.description||''}\n` +
-        `CM: ${co.cm||'—'}  |  Vendor: ${co.vendor||'—'}  |  Site: ${co.site||'—'}\nReport date: ${co.date||'—'}\n\n` +
-        `Note: The .docx file was downloaded to your computer. Please attach it to this email before sending.\n\nBest regards,\n${co.preparedBy||''}`
+        `Hi,\n\nPlease find attached the PMR & FAI Summary Report for ${co.nvpn||'[NVPN]'} Rev ${co.revision||'XX'}.\n\nVendor: ${co.vendor||''}\nCM: ${co.cm||''}\nDate: ${co.date||''}\n\nNote: Please download the report first (⬇ Download Report) and attach it manually to this email.\n\nBest regards,\n${co.preparedBy||''}`
     );
-    setTimeout(() => { window.location.href = `mailto:lsharan@nvidia.com,sgabrieli@nvidia.com?subject=${subject}&body=${body}`; }, 900);
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
 }
 
-// =====================================================================
-// DOCX GENERATION
-// =====================================================================
+
 function dataURLtoUint8(dataURL) {
     const b = atob(dataURL.split(',')[1]);
     const u = new Uint8Array(b.length);
@@ -1581,160 +1693,272 @@ function imgType(dataURL) {
 }
 
 async function generateDocx() {
-    if (!window.docx) { alert('docx library not loaded. Check your internet connection.'); return; }
-    const btn = document.querySelector('.btn-success');
-    if (btn) { btn.textContent = '⏳ Generating…'; btn.disabled = true; }
-    try {
-        const { Document, Paragraph, TextRun, Table, TableRow, TableCell,
-                Packer, HeadingLevel, AlignmentType, WidthType, ImageRun, VerticalAlign } = window.docx;
-        const co = state.cover;
-        const { dimV,matV,adhV,artV,visV,faiV,pmrV } = computeVerdicts();
+  try {
+    const co = state.cover;
+    const {dimV,matV,adhV,artV,visV,faiV,pmrV} = computeVerdicts();
+    const nvpn = (co.nvpn||'Draft').replace(/[^a-zA-Z0-9_\-]/g,'_');
+    const rev  = (co.revision||'XX').replace(/[^a-zA-Z0-9_\-]/g,'_');
+    const dt   = new Date().toISOString().slice(0,10).replace(/-/g,'');
+    const xe   = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-        const p  = (txt, opts={}) => new Paragraph({ children:[new TextRun({text:String(txt||''),size:20,...opts})] });
-        const pb = (txt) => p(txt, {bold:true});
-        const ph = (txt) => new Paragraph({ text:String(txt||''), heading:HeadingLevel.HEADING_1, spacing:{before:160,after:80} });
-        const br = () => new Paragraph({text:''});
+    const F   = 'font-family:Calibri,Arial,sans-serif;';
+    const NVG = '#76B900';
+    const LG  = '#92D050';
+    const BS  = 'border:1pt solid #AAAAAA;';
+    const PB  = '<br style="mso-break-type:page-break" clear="all">';
 
-        function hdrCell(txt) {
-            return new TableCell({ children:[new Paragraph({children:[new TextRun({text:String(txt||''),size:18,bold:true,color:'374151'})]})],
-                shading:{fill:'f3f4f6'}, verticalAlign:VerticalAlign.CENTER,
-                margins:{top:60,bottom:60,left:80,right:80} });
-        }
-        function dataCell(txt) {
-            return new TableCell({ children:[new Paragraph({children:[new TextRun({text:String(txt||''),size:20})]})],
-                verticalAlign:VerticalAlign.CENTER, margins:{top:60,bottom:60,left:80,right:80} });
-        }
-        function makeTable(headers, rows) {
-            return new Table({ width:{size:100,type:WidthType.PERCENTAGE}, rows:[
-                new TableRow({ tableHeader:true, children:headers.map(h=>hdrCell(h)) }),
-                ...rows.map(cells => new TableRow({ children:cells.map(c=>dataCell(c)) }))
-            ]});
-        }
+    // pt to px (96dpi)
+    function pt(p){ return Math.round(p*96/72); }
 
-        const ch = [];
-
-        // Cover
-        ch.push(new Paragraph({ children:[new TextRun({text:'Package Mechanical Review & First Article Inspection',bold:true,size:44})], alignment:AlignmentType.CENTER, spacing:{before:480,after:100} }));
-        ch.push(new Paragraph({ children:[new TextRun({text:'Summary Report',bold:true,size:36,color:'374151'})], alignment:AlignmentType.CENTER, spacing:{after:360} }));
-        ch.push(makeTable(['Field','Value'],[
-            ['Packaging Drawing NVPN', co.nvpn||''],['Part Revision', co.revision||''],
-            ['Description', co.description||''],['CM', co.cm||''],['Vendor', co.vendor||''],
-            ['Vendor Site', co.site||''],['Report Date', co.date||''],['Classification','NVIDIA Confidential'],
-            ['Prepared by', co.preparedBy||''],['Reviewed by', co.reviewedBy||''],
-            ['Approved by','NVIDIA NBU Packaging Engineer – Shay Gabrieli / Liron Sharan'],
-        ]));
-        ch.push(br());
-
-        // 1. Purpose
-        ch.push(ph('1.  Purpose'));
-        ch.push(p('The purpose of this process is to document that the package conforms to its specifications and to verify that the packaged goods (including any designated wrapping, e.g., a plastic bag) fit properly within the package, as required and detailed in "Package Mechanical Review and First Article Inspection – Definitions Guide and Pass-Fail Criteria" (DOC070000).'));
-        ch.push(br());
-
-        // 2. Scope
-        ch.push(ph('2.  Scope'));
-        ch.push(p(`This report documents the Package Mechanical Review (PMR) and First Article Inspection (FAI) of part number ${co.nvpn||'[PACxxxxxx]'} Rev ${co.revision||'[xx]'} (${co.description||'[package description]'}), manufactured by ${co.vendor||'[vendor]'}. It covers dimensional, material, structural, marking, fit and unitization verification against the design drawing and packaging specification.`));
-        ch.push(br());
-
-        // 3. Prototype Photos
-        ch.push(ph('3.  Prototype Photographed Identification'));
-
-        function embedImg(dataURL, buffer, label) {
-            ch.push(pb(label));
-            const raw = buffer || (dataURL ? dataURLtoUint8(dataURL).buffer : null);
-            if (raw) {
-                try {
-                    ch.push(new Paragraph({ children:[new ImageRun({ data:raw, transformation:{width:280,height:190}, type:imgType(dataURL) })] }));
-                } catch(e) { ch.push(p('[Photo could not be embedded]',{italics:true,color:'888888'})); }
-            } else { ch.push(p('[No photo uploaded]',{italics:true,color:'888888'})); }
-            ch.push(br());
-        }
-
-        ch.push(pb('Cardboard package:'));
-        embedImg(state.overviewCards.cardboard.dataURL, state.overviewCards.cardboard.buffer, 'Cardboard Package – Overview');
-        ch.push(pb('Vacuum forming package:'));
-        embedImg(state.overviewCards.vf.dataURL, state.overviewCards.vf.buffer, 'Vacuum Forming Package – Overview');
-        ch.push(pb('Prototype photographs:'));
-        ch.push(br());
-        PHOTOS_META.forEach((pm,i) => embedImg(state.photoDataURLs[i], state.photoArrayBuffers[i], `${pm.id} – ${pm.label} (${pm.side})`));
-
-        // 4. Executive Summary
-        ch.push(ph('4.  Executive Summary'));
-        ch.push(p('One-line verdict per inspection area. Details in the corresponding section.'));
-        ch.push(br());
-        ch.push(makeTable(['#','Inspection Area','Verdict'],[
-            ['S1','Dimensional Inspection',dimV],['S2','Material Inspection & Mechanical Features',matV],
-            ['S3','Adhesive / Joining',adhV],['S4','Artwork Inspection',artV],
-            ['S5','Visual Inspection',visV],['S6','Overall PMR Verdict',pmrV],['S7','First Article Inspection',faiV],
-        ]));
-        ch.push(br());
-
-        // 5-9. Data sections
-        ch.push(ph('5.  Dimensional Inspection'));
-        ch.push(p('Reference balloon-numbered drawing in Appendix A.')); ch.push(br());
-        ch.push(makeTable(['Balloon #','Feature / Dimension','Nominal (mm)','Tolerance (mm)','Measured (mm)','Verdict','Notes'],
-            state.dimensional.map(r=>[r.id,r.feature,r.nominal,r.tolerance,r.measured,r.verdict||'—',r.notes])));
-        ch.push(br());
-
-        ch.push(ph('6.  Material Inspection & Mechanical Features'));
-        ch.push(p('Add packaging COC to Appendix B.')); ch.push(br());
-        ch.push(makeTable(['#','Material / Parameter','Specification','Tolerance','Measured','Verdict','Notes'],
-            state.material.map(r=>[r.id,r.label,r.spec,r.tol,r.measured,r.verdict||'—',r.notes])));
-        ch.push(br());
-
-        ch.push(ph('7.  Adhesive / Joining'));
-        ch.push(makeTable(['#','Joint Parameter','Verdict','Notes'],
-            state.adhesive.map(r=>[r.id,r.label,r.verdict||'—',r.notes])));
-        ch.push(br());
-
-        ch.push(ph('8.  Artwork Inspection'));
-        ch.push(p('Note artworks legibility (no smudge / fade / partiality).')); ch.push(br());
-        ch.push(makeTable(['#','Marking / Label','Verdict','Notes'],
-            state.artwork.map(r=>[r.id,r.label,r.verdict||'—',r.notes])));
-        ch.push(br());
-
-        ch.push(ph('9.  Visual Inspection'));
-        ch.push(makeTable(['#','Visual Check','Verdict','Notes'],
-            state.visual.map(r=>[r.id,r.label,r.verdict||'—',r.notes])));
-        ch.push(br());
-
-        ch.push(ph('10.  First Article Inspection'));
-        if (state.fai.avlType==='second') {
-            ch.push(p(`Second AVL – refer to ${state.fai.firstAvlRef||'[First AVL vendor name and report date]'}`));
-        } else {
-            ch.push(makeTable(['#','Fit / Interface Check','Verdict','Notes'],
-                state.fai.items.map(r=>[r.id,r.label,r.verdict||'—',r.notes])));
-        }
-        ch.push(br());
-
-        ch.push(ph('11.  Appendices'));
-        ch.push(p('Appendix A – Balloon-numbered drawing used as the PMR reference'));
-        ch.push(p('Appendix B – Packaging Certificate of Compliance (as provided by the vendor)'));
-        ch.push(br());
-
-        ch.push(ph('Notice'));
-        ch.push(p('This document is provided for information purposes only and shall not be regarded as a warranty of a certain functionality, condition or quality of a product. NVIDIA makes no representations or warranties as to the accuracy or completeness of the information herein.',{size:18,color:'444444'}));
-        ch.push(br());
-
-        ch.push(ph('Revision History'));
-        ch.push(makeTable(['Rev','Date','Author','Description'],
-            [['—', co.date||'', co.preparedBy||'', 'Initial release']]));
-
-        const doc = new Document({ sections:[{properties:{}, children:ch}] });
-        const blob = await Packer.toBlob(doc);
-        const nvpn = (co.nvpn||'Draft').replace(/[^a-zA-Z0-9]/g,'');
-        const rev  = (co.revision||'XX').replace(/[^a-zA-Z0-9]/g,'');
-        const dt   = (co.date||new Date().toISOString().slice(0,10)).replace(/-/g,'');
-        saveAs(blob, `PMR_FAI_${nvpn}_Rev${rev}_${dt}.docx`);
-
-    } catch(err) {
-        console.error(err);
-        alert('Error generating report: ' + err.message);
+    function vb(v) {
+      if (v==='PASS') return '<b style="color:#155724;background:#D4EDDA;padding:1pt 4pt;">PASS</b>';
+      if (v==='FAIL') return '<b style="color:#721C24;background:#F8D7DA;padding:1pt 4pt;">FAIL</b>';
+      if (v==='N/A')  return '<span style="color:#555;background:#E2E3E5;padding:1pt 4pt;">N/A</span>';
+      return '<span style="color:#999;">—</span>';
     }
+
+    // Evidence photo: constrained to 60×45pt
+    function phImg(url) {
+      if (!url) return '<span style="'+F+'font-size:8pt;color:#aaa;">—</span>';
+      return '<img src="'+url+'" width="'+pt(60)+'" height="'+pt(45)+'" style="max-width:'+pt(60)+'px;max-height:'+pt(45)+'px;object-fit:contain;border:1pt solid #ddd;">';
+    }
+
+    function sec(n, title) {
+      return '<h2 style="'+F+'font-size:13pt;font-weight:bold;color:'+NVG+
+             ';border-bottom:2pt solid '+LG+';padding-bottom:2pt;margin:12pt 0 4pt;page-break-after:avoid;">'+
+             xe(String(n))+'.&nbsp;&nbsp;'+xe(title)+'</h2>';
+    }
+    function cRow(lbl, val) {
+      return '<tr>'+
+        '<td style="'+F+'font-size:9pt;font-weight:bold;background:'+LG+';padding:3pt 6pt;'+BS+'width:36%;">'+xe(lbl)+'</td>'+
+        '<td style="'+F+'font-size:9pt;padding:3pt 6pt;'+BS+'">'+xe(String(val||''))+'</td></tr>';
+    }
+    function td(html, w, center) {
+      return '<td style="'+F+'font-size:8pt;padding:2pt 4pt;'+BS+
+             (w?'width:'+w+';':'')+(center?'text-align:center;':'')+
+             'vertical-align:middle;">'+html+'</td>';
+    }
+    function buildTable(headers, widths, bodyHtml) {
+      const hdr='<tr>'+headers.map((x,i)=>
+        '<th style="'+F+'font-size:8pt;font-weight:bold;background:'+LG+';padding:2pt 4pt;'+BS+
+        (widths[i]?'width:'+widths[i]+';':'')+'text-align:center;">'+xe(x)+'</th>'
+      ).join('')+'</tr>';
+      return '<table style="width:100%;border-collapse:collapse;margin-bottom:8pt;">'+hdr+bodyHtml+'</table>';
+    }
+
+    // ── Dimensional rows ──────────────────────────────────────────────
+    const balloonAll=[];
+    Object.entries(_pdfBalloons).forEach(([pg,arr])=>arr.forEach(b=>balloonAll.push(b)));
+    balloonAll.sort((a,b)=>(a.num||0)-(b.num||0));
+    const dimBase=state.dimensional.length;
+    const dimRows=[
+      ...state.dimensional,
+      ...balloonAll.map((b,i)=>({
+        id:'D'+(dimBase+i+1), feature:b.feature||'',
+        nominal:b.nominal||'', tolerance:b.tolerance||'', measured:b.measured||'',
+        verdict:b.verdict, notes:b.notes||'', notesPhoto:b.notesPhoto
+      }))
+    ];
+
+    const matRows2=state.material.filter(r=>!hiddenRows('material').includes(r.id));
+    const adhRows2=state.adhesive.filter(r=>!hiddenRows('adhesive').includes(r.id));
+    const artRows2=state.artwork.filter(r=>!hiddenRows('artwork').includes(r.id));
+    const visRows2=state.visual.filter(r=>!hiddenRows('visual').includes(r.id));
+    const faiRows2=state.fai.items.filter(r=>!hiddenRows('faiItems').includes(r.id));
+
+    const dimTbl=buildTable(
+      ['#','Feature / Dimension','Nominal','Tol.','Measured','Result','Evidence'],
+      ['5%','28%','11%','11%','11%','9%',''],
+      dimRows.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.feature||r.label||''))+td(xe(r.nominal||''),'10%',true)+td(xe(r.tolerance||''),'10%',true)+td(xe(r.measured||''),'10%',true)+td(vb(r.verdict),'8%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
+    );
+    const matTbl=buildTable(
+      ['#','Material / Parameter','Spec.','Tol.','Measured','Result','Evidence'],
+      ['5%','26%','14%','9%','10%','9%',''],
+      matRows2.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.label||''))+td(xe(r.spec||''),'13%')+td(xe(r.tol||''),'8%',true)+td(xe(r.measured||''),'9%',true)+td(vb(r.verdict),'8%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
+    );
+    function simpleTbl(rows){
+      return buildTable(
+        ['#','Description','Result','Evidence'],['5%','','9%',''],
+        rows.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.label||''))+td(vb(r.verdict),'8%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
+      );
+    }
+
+    const summaryRows=[
+      ['5','Dimensional Inspection',dimV],
+      ['6','Material Inspection & Mechanical Features',matV],
+      ...(co.pkgType!=='vf'?[['7','Adhesive / Joining',adhV]]:[]),
+      ['8','Artwork Inspection',artV],['9','Visual Inspection',visV],
+      ['10','First Article Inspection (FAI)',faiV],['—','Overall PMR Verdict',pmrV],
+    ];
+    const sumTbl=buildTable(
+      ['Section','Inspection Area','Verdict'],['8%','','18%'],
+      summaryRows.map(([sid,lbl,v])=>'<tr>'+td(xe(sid),'8%',true)+td('<b>'+xe(lbl)+'</b>')+td(vb(v),'18%',true)+'</tr>').join('')
+    );
+
+    // ── Prototype photos 3-col, constrained to 110×85pt ──────────────
+    const photoLabels=['Cardboard Overview','VF Overview','Photo 1','Photo 2','Photo 3','Photo 4','Photo 5','Photo 6','Photo 7'];
+    const allPh=[state.overviewCards.cardboard.dataURL,state.overviewCards.vf.dataURL,...state.photoDataURLs].filter(Boolean);
+    let phSection='';
+    if(allPh.length){
+      let rows='',cells='';
+      allPh.forEach((u,i)=>{
+        if(i>0&&i%3===0){rows+='<tr>'+cells+'</tr>';cells='';}
+        cells+='<td style="padding:4pt;text-align:center;width:33%;border:1pt solid #eee;">'+
+          '<img src="'+u+'" width="'+pt(110)+'" height="'+pt(85)+'" style="max-width:'+pt(110)+'px;max-height:'+pt(85)+'px;object-fit:contain;"><br>'+
+          '<span style="'+F+'font-size:7pt;color:#666;">'+xe(photoLabels[i]||'')+'</span></td>';
+      });
+      if(cells)rows+='<tr>'+cells+'</tr>';
+      phSection='<table style="width:100%;border-collapse:collapse;">'+rows+'</table>';
+    } else {
+      phSection='<p style="'+F+'font-size:9pt;color:#888;">No prototype photos uploaded.</p>';
+    }
+
+    // ── Render PDF page with balloons drawn on canvas ─────────────────
+    async function renderPdfPageWithBalloons(pdf, pageNum, scale) {
+      const page   = await pdf.getPage(pageNum);
+      const vp     = page.getViewport({scale});
+      const canvas = document.createElement('canvas');
+      canvas.width  = vp.width;
+      canvas.height = vp.height;
+      const ctx = canvas.getContext('2d');
+      await page.render({canvasContext:ctx, viewport:vp}).promise;
+      (_pdfBalloons[pageNum]||[]).forEach(b=>{
+        const bx = b.cx*(scale/_pdfScale);
+        const by = b.cy*(scale/_pdfScale);
+        const r  = 13*scale;
+        ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2);
+        ctx.fillStyle='#76B900'; ctx.fill();
+        ctx.lineWidth=2*scale; ctx.strokeStyle='#fff'; ctx.stroke();
+        ctx.fillStyle='#fff';
+        ctx.font=`bold ${Math.round(11*scale)}px Arial`;
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(String(b.num||''),bx,by);
+      });
+      return canvas.toDataURL('image/jpeg',0.85);
+    }
+
+    // ── Appendix A: drawing pages ─────────────────────────────────────
+    let appxA='<p style="'+F+'font-size:9pt;color:#888;">No drawing uploaded.</p>';
+    if(_pdf){
+      toast('Rendering drawing…');
+      const firstVP=(await _pdf.getPage(1)).getViewport({scale:1});
+      const scale=Math.min(900/firstVP.width, 2.2);
+      let html2='';
+      for(let p=1;p<=_pdf.numPages;p++){
+        const url=await renderPdfPageWithBalloons(_pdf,p,scale);
+        html2+='<p style="text-align:center;margin:4pt 0;"><img src="'+url+'" width="'+pt(480)+'" style="max-width:100%;border:1pt solid #bbb;"></p>';
+        if(p<_pdf.numPages) html2+=PB;
+      }
+      appxA=html2;
+    }
+
+    // ── Appendix B: COC ───────────────────────────────────────────────
+    let appxB='<p style="'+F+'font-size:9pt;color:#888;">No COC file uploaded.</p>';
+    if(state.cocFile&&state.cocFile.dataURL){
+      if(state.cocFile.type&&state.cocFile.type.startsWith('image/')){
+        appxB='<p style="text-align:center;"><img src="'+state.cocFile.dataURL+'" width="'+pt(480)+'" style="max-width:100%;border:1pt solid #bbb;"></p>';
+      } else {
+        toast('Rendering COC…');
+        try{
+          const buf=Uint8Array.from(atob(state.cocFile.dataURL.split(',')[1]),c=>c.charCodeAt(0));
+          const cpdf=await pdfjsLib.getDocument({data:buf}).promise;
+          const firstVP2=(await cpdf.getPage(1)).getViewport({scale:1});
+          const cs=Math.min(900/firstVP2.width,2.2);
+          let ch='';
+          for(let p=1;p<=cpdf.numPages;p++){
+            const page=await cpdf.getPage(p);
+            const vp=page.getViewport({scale:cs});
+            const cv=document.createElement('canvas');
+            cv.width=vp.width; cv.height=vp.height;
+            await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+            ch+='<p style="text-align:center;margin:4pt 0;"><img src="'+cv.toDataURL('image/jpeg',0.85)+'" width="'+pt(480)+'" style="max-width:100%;border:1pt solid #bbb;"></p>';
+            if(p<cpdf.numPages) ch+=PB;
+          }
+          appxB=ch;
+        }catch(e){
+          appxB='<p style="'+F+'font-size:9pt;">COC: '+xe(state.cocFile.name)+'</p>';
+        }
+      }
+    }
+
+    // ── Assemble ──────────────────────────────────────────────────────
+    toast('Building document…');
+    const html=[
+      '<!DOCTYPE html>',
+      '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">',
+      '<head><meta charset="UTF-8"><meta name=ProgId content=Word.Document><meta name=Generator content="Microsoft Word 15">',
+      '<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/></w:WordDocument></xml><![endif]-->',
+      '<style>',
+      '@page Section1{size:21.0cm 29.7cm;margin:1.8cm 1.8cm 1.8cm 1.8cm;}',
+      'div.Section1{page:Section1;}',
+      'body{'+F+'font-size:9pt;color:#111;margin:0;padding:0;}',
+      'h2{'+F+'font-size:13pt;font-weight:bold;color:'+NVG+';margin:12pt 0 4pt;page-break-after:avoid;}',
+      'table{border-collapse:collapse;width:100%;}',
+      'td,th{'+F+'font-size:8pt;vertical-align:middle;}',
+      'p{margin:2pt 0;}img{display:inline-block;}',
+      '</style></head><body><div class="Section1">',
+
+      // ── Header ──────────────────────────────────────────────────────
+      '<table style="width:100%;border-bottom:2pt solid '+LG+';margin-bottom:8pt;"><tr>',
+      '<td style="width:8%;vertical-align:middle;padding:0;">',
+      '<img src="data:image/png;base64,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" width="47" height="66" style="width:47px;height:66px;display:block;" alt="NVIDIA">',
+      '</td>',
+      '<td style="text-align:right;vertical-align:bottom;'+F+'font-size:7pt;color:#666;padding-bottom:2pt;">',
+      'DOC070001 &nbsp;|&nbsp; Rev '+xe(co.revision||'00')+' &nbsp;|&nbsp; NVIDIA Confidential',
+      '</td></tr></table>',
+
+      // ── Title ────────────────────────────────────────────────────────
+      '<p style="'+F+'font-size:20pt;font-weight:bold;color:'+NVG+';text-align:center;margin:0;">Package Mechanical Review &amp; First Article Inspection</p>',
+      '<p style="'+F+'font-size:13pt;font-weight:bold;text-align:center;margin:3pt 0 10pt;">Summary Report</p>',
+
+      // ── Cover ────────────────────────────────────────────────────────
+      '<table style="width:100%;border-collapse:collapse;margin-bottom:10pt;">',
+      cRow('Packaging Drawing NVPN',co.nvpn),cRow('Part Revision',co.revision),
+      cRow('Description',co.description),cRow('CM',co.cm),
+      cRow('Vendor',co.vendor),cRow('Vendor Site',co.site),
+      cRow('Report Date',co.date),cRow('Classification','NVIDIA Confidential'),
+      cRow('Package Type',co.pkgType==='vf'?'Vacuum Forming':'Cardboard'),
+      cRow('Prepared by',co.preparedBy),cRow('Reviewed by',co.reviewedBy),
+      cRow('Approved by','NVIDIA NBU Packaging Engineer – Shay Gabrieli / Liron Sharan'),
+      '</table>',
+
+      PB,sec(4,'Executive Summary'),sumTbl,
+      PB,sec(3,'Prototype Photographs'),phSection,
+      PB,sec(5,'Dimensional Inspection'),
+      '<p style="'+F+'font-size:7pt;color:#555;margin:0 0 3pt;">D1–D'+dimBase+' = standard. D'+(dimBase+1)+'+ = balloon callouts.</p>',
+      dimTbl,
+      PB,sec(6,'Material Inspection &amp; Mechanical Features'),matTbl,
+      ...(co.pkgType!=='vf'?[sec(7,'Adhesive / Joining'),simpleTbl(adhRows2)]:[]),
+      sec(8,'Artwork Inspection'),simpleTbl(artRows2),
+      sec(9,'Visual Inspection'),simpleTbl(visRows2),
+      PB,sec(10,'First Article Inspection (FAI)'),
+      '<p style="'+F+'font-size:8pt;margin:0 0 4pt;">AVL Type: <b>'+xe(state.fai.avlType==='first'?'First AVL':'Second AVL')+'</b>'+(state.fai.firstAvlRef?' – Ref: <b>'+xe(state.fai.firstAvlRef)+'</b>':'')+'</p>',
+      ...(state.fai.avlType==='first'?[simpleTbl(faiRows2)]:['<p style="'+F+'font-size:8pt;">Second AVL — references first AVL vendor report.</p>']),
+
+      PB,
+      '<h2 style="'+F+'font-size:13pt;font-weight:bold;color:'+NVG+';border-bottom:2pt solid '+LG+';padding-bottom:2pt;margin:12pt 0 4pt;">Appendix A &nbsp;–&nbsp; Drawing</h2>',
+      appxA,
+      PB,
+      '<h2 style="'+F+'font-size:13pt;font-weight:bold;color:'+NVG+';border-bottom:2pt solid '+LG+';padding-bottom:2pt;margin:12pt 0 4pt;">Appendix B &nbsp;–&nbsp; Certificate of Conformance (COC)</h2>',
+      appxB,
+
+      '<p style="'+F+'font-size:7pt;color:#888;border-top:1pt solid #ccc;margin-top:12pt;padding-top:3pt;text-align:center;">',
+      'NVIDIA Confidential &nbsp;|&nbsp; &copy; '+new Date().getFullYear()+' NVIDIA Corporation &amp; affiliates. All rights reserved. &nbsp;|&nbsp; Generated '+new Date().toLocaleDateString(),
+      '</p>',
+      '</div></body></html>'
+    ].join('\n');
+
+    const blob=new Blob([html],{type:'application/msword;charset=utf-8'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download='PMR_FAI_'+nvpn+'_Rev'+rev+'_'+dt+'.doc';
+    document.body.appendChild(a);a.click();
+    setTimeout(()=>{URL.revokeObjectURL(url);a.remove();},1000);
+    toast('✅ Report downloaded');
+  }catch(err){alert('Error:\n'+err.message+'\n'+err.stack);}
 }
 
-// =====================================================================
-// EMAIL
-// =====================================================================
+
 function sendReportEmail() {
     generateDocx();
     const co = state.cover;
