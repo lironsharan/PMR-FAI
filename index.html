@@ -1768,13 +1768,13 @@ async function generateDocx() {
 
     const dimTbl=buildTable(
       ['#','Feature / Dimension','Nominal','Tol.','Measured','Result','Evidence'],
-      ['5%','28%','11%','11%','11%','9%',''],
-      dimRows.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.feature||r.label||''))+td(xe(r.nominal||''),'10%',true)+td(xe(r.tolerance||''),'10%',true)+td(xe(r.measured||''),'10%',true)+td(vb(r.verdict),'8%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
+      ['5%','27%','13%','10%','10%','9%',''],
+      dimRows.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.feature||r.label||''))+td(xe(r.nominal||''),'13%',true)+td(xe(r.tolerance||''),'10%',true)+td(xe(r.measured||''),'10%',true)+td(vb(r.verdict),'9%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
     );
     const matTbl=buildTable(
       ['#','Material / Parameter','Spec.','Tol.','Measured','Result','Evidence'],
-      ['5%','26%','14%','9%','10%','9%',''],
-      matRows2.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.label||''))+td(xe(r.spec||''),'13%')+td(xe(r.tol||''),'8%',true)+td(xe(r.measured||''),'9%',true)+td(vb(r.verdict),'8%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
+      ['5%','27%','13%','10%','10%','9%',''],
+      matRows2.map(r=>'<tr>'+td(xe(r.id),'5%',true)+td(xe(r.label||''))+td(xe(r.spec||''),'13%')+td(xe(r.tol||''),'10%',true)+td(xe(r.measured||''),'10%',true)+td(vb(r.verdict),'9%',true)+td(phImg(r.notesPhoto),'',true)+'</tr>').join('')
     );
     function simpleTbl(rows){
       return buildTable(
@@ -1795,20 +1795,26 @@ async function generateDocx() {
       summaryRows.map(([sid,lbl,v])=>'<tr>'+td(xe(sid),'8%',true)+td('<b>'+xe(lbl)+'</b>')+td(vb(v),'18%',true)+'</tr>').join('')
     );
 
-    // ── Prototype photos 3-col, constrained to 110×85pt ──────────────
-    const photoLabels=['Cardboard Overview','VF Overview','Photo 1','Photo 2','Photo 3','Photo 4','Photo 5','Photo 6','Photo 7'];
-    const allPh=[state.overviewCards.cardboard.dataURL,state.overviewCards.vf.dataURL,...state.photoDataURLs].filter(Boolean);
+    // ── Prototype photos: P1-P7 in strict rows of 3 ─────────────────
+    const pLabels=['Front','Right','Back','Left','Bottom','Top (closed)','Top (open – no unit)'];
+    function photoCell(u,lbl){
+      return '<td style="padding:4pt;text-align:center;width:33%;border:1pt solid #eee;">'+
+        '<img src="'+u+'" width="'+pt(110)+'" height="'+pt(85)+'" style="max-width:'+pt(110)+'px;max-height:'+pt(85)+'px;object-fit:contain;"><br>'+
+        '<span style="'+F+'font-size:7pt;color:#666;">'+xe(lbl)+'</span></td>';
+    }
     let phSection='';
-    if(allPh.length){
-      let rows='',cells='';
-      allPh.forEach((u,i)=>{
-        if(i>0&&i%3===0){rows+='<tr>'+cells+'</tr>';cells='';}
-        cells+='<td style="padding:4pt;text-align:center;width:33%;border:1pt solid #eee;">'+
-          '<img src="'+u+'" width="'+pt(110)+'" height="'+pt(85)+'" style="max-width:'+pt(110)+'px;max-height:'+pt(85)+'px;object-fit:contain;"><br>'+
-          '<span style="'+F+'font-size:7pt;color:#666;">'+xe(photoLabels[i]||'')+'</span></td>';
+    const pPhotos=state.photoDataURLs;
+    if(pPhotos.some(u=>u)){
+      let html3='<table style="width:100%;border-collapse:collapse;">';
+      let cells='', col=0;
+      pPhotos.forEach((u,i)=>{
+        if(col>0&&col%3===0){html3+='<tr>'+cells+'</tr>';cells='';}
+        cells+=photoCell(u||'', pLabels[i]||('P'+(i+1)));
+        col++;
       });
-      if(cells)rows+='<tr>'+cells+'</tr>';
-      phSection='<table style="width:100%;border-collapse:collapse;">'+rows+'</table>';
+      if(cells) html3+='<tr>'+cells+'</tr>';
+      html3+='</table>';
+      phSection=html3;
     } else {
       phSection='<p style="'+F+'font-size:9pt;color:#888;">No prototype photos uploaded.</p>';
     }
